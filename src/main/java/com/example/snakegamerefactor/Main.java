@@ -48,6 +48,9 @@ public class Main extends Application {
     // Is Paused
     private boolean gamePaused = false;
 
+    // control AnimationTimer
+    private AnimationTimer singleGameTimer;
+
 
 
     // Graph
@@ -76,6 +79,7 @@ public class Main extends Application {
             KeyCode keyCode = event.getCode();
             switch (keyCode) {
                 case UP:
+                    System.out.println("scene1: up");
                     if (player1.getDirection() != Direction.DOWN) {
                         player1.setDirection(Direction.UP);
                     }
@@ -106,9 +110,6 @@ public class Main extends Application {
             }
         });
 
-        initSingleGame();
-        updateSingleGame();
-
         // TwoPlayerGame Mode
         AnchorPane twoPlayersMode = new AnchorPane(canvas2);
         Scene twoPlayersScene = new Scene(twoPlayersMode);
@@ -117,6 +118,7 @@ public class Main extends Application {
             KeyCode keyCode = event.getCode();
             switch (keyCode) {
                 case UP:
+                    System.out.println("scene2: up");
                     if (player1.getDirection() != Direction.DOWN) {
                         player1.setDirection(Direction.UP);
                     }
@@ -137,6 +139,7 @@ public class Main extends Application {
                     }
                     break;
                 case W:
+                    System.out.println("move w");
                     if (player2.getDirection() != Direction.S) {
                         player2.setDirection(Direction.W);
                     }
@@ -185,10 +188,13 @@ public class Main extends Application {
     // change stage scene
     public void switchToGameScene() {
         stage.setScene(gameScene);
+        initSingleGame();
+        updateSingleGame();
     }
 
     public void switchToTwoPlayersScene() {
         stage.setScene(twoPlayerScene);
+        singleGameTimer.stop();
     }
 
     private void initSingleGame() {
@@ -396,10 +402,11 @@ public class Main extends Application {
     }
 
     private void updateSingleGame() {
-        AnimationTimer animationTimer = new AnimationTimer() {
+        singleGameTimer = new AnimationTimer() {
             private long lastUpdateTime;
             @Override
             public void handle(long now) {
+
                 if (now - lastUpdateTime >= 1_000_000_000 / SPEED) {
                     lastUpdateTime = now;
                     if (!gameOver && !gamePaused) {
@@ -410,6 +417,6 @@ public class Main extends Application {
             }
         };
 
-        animationTimer.start();
+        singleGameTimer.start();
     }
 }
