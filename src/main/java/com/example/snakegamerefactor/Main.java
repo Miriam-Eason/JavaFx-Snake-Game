@@ -27,6 +27,7 @@ public class Main extends Application {
     private static Canvas canvas = new Canvas(WIDTH * SIZE, HEIGHT * SIZE);
     private static Canvas canvas2 = new Canvas(WIDTH * SIZE, HEIGHT * SIZE);
     private static GraphicsContext gc = canvas.getGraphicsContext2D();
+    private static GraphicsContext gcTwo = canvas2.getGraphicsContext2D();
 
     // Stage and Scene
     private Stage stage;
@@ -50,7 +51,7 @@ public class Main extends Application {
 
     // control AnimationTimer
     private AnimationTimer singleGameTimer;
-
+    private AnimationTimer twoPlayersGameTimer;
 
 
     // Graph
@@ -173,7 +174,6 @@ public class Main extends Application {
         // RankingScene
 
 
-
         stage.setTitle("Snake Game");
         stage.setScene(startScene);
         stage.show();
@@ -187,14 +187,21 @@ public class Main extends Application {
 
     // change stage scene
     public void switchToGameScene() {
+        if (twoPlayersGameTimer != null) {
+            twoPlayersGameTimer.stop();
+        }
         stage.setScene(gameScene);
         initSingleGame();
         updateSingleGame();
     }
 
     public void switchToTwoPlayersScene() {
+        if (singleGameTimer != null) {
+            singleGameTimer.stop();
+        }
         stage.setScene(twoPlayerScene);
-        singleGameTimer.stop();
+        initTwoPlayersGame();
+        updateTwoPlayersGame();
     }
 
     private void initSingleGame() {
@@ -214,11 +221,34 @@ public class Main extends Application {
         gamePaused = false;
     }
 
+    private void initTwoPlayersGame() {
+        // clear snake body length
+        player1.getSnake().clear();
+        player2.getSnake().clear();
+        player1.setDirection(Direction.RIGHT);
+        player2.setDirection(Direction.A);
+
+        int x1 = WIDTH / 2 + 1;
+        int y1 = HEIGHT / 2;
+
+        int x2 = WIDTH / 2 - 1;
+        int y2 = HEIGHT / 2;
+
+        player1.getSnake().add(new Point(x1, y1));
+        player2.getSnake().add(new Point(x2, y2));
+
+        // init food
+        generateFood();
+        // init game state
+        gameOver = false;
+        gamePaused = false;
+    }
+
     private void movePlayer1() {
         Point head = player1.getSnake().getFirst();
         Point newHead = null;
 
-        switch(player1.getDirection()) {
+        switch (player1.getDirection()) {
             case UP:
                 newHead = new Point(head.getX(), head.getY() - 1);
                 break;
@@ -264,11 +294,61 @@ public class Main extends Application {
 
     }
 
+    private void movePlayer1ForTwoMode() {
+        Point head = player1.getSnake().getFirst();
+        Point newHead = null;
+
+        switch (player1.getDirection()) {
+            case UP:
+                newHead = new Point(head.getX(), head.getY() - 1);
+                break;
+            case DOWN:
+                newHead = new Point(head.getX(), head.getY() + 1);
+                break;
+            case LEFT:
+                newHead = new Point(head.getX() - 1, head.getY());
+                break;
+            case RIGHT:
+                newHead = new Point(head.getX() + 1, head.getY());
+                break;
+            default:
+                break;
+        }
+
+        // if crash snake body
+        if (player1.getSnake().contains(newHead)) {
+            gameOver = true;
+            showTwoPlayersGameOverDialog();
+            return;
+        }
+
+        // if crash the border
+        if (newHead.getX() < 0 || newHead.getX() >= WIDTH ||
+                newHead.getY() < 0 || newHead.getY() >= HEIGHT) {
+            gameOver = true;
+            showTwoPlayersGameOverDialog();
+            return;
+        }
+
+        // Update Snake position
+        player1.getSnake().addFirst(newHead);
+
+        // If eat food
+        if (newHead.equals(food)) {
+            // if ate, increase the snake's body length
+            generateFood();
+        } else {
+            // remove the last body element
+            player1.getSnake().removeLast();
+        }
+
+    }
+
     private void movePlayer2() {
         Point head = player2.getSnake().getFirst();
         Point newHead = null;
 
-        switch(player2.getDirection()) {
+        switch (player2.getDirection()) {
             case W:
                 newHead = new Point(head.getX(), head.getY() - 1);
                 break;
@@ -288,7 +368,7 @@ public class Main extends Application {
         // if crash snake body
         if (player2.getSnake().contains(newHead)) {
             gameOver = true;
-            showSingleGameOverDialog();
+            showTwoPlayersGameOverDialog();
             return;
         }
 
@@ -335,22 +415,22 @@ public class Main extends Application {
         alert.setContentText("Game Over");
         alert.show();
 
-//        alert.setOnHidden(event -> {
-//            System.out.println("close the end game button");
-//            // re-start Game
-//            initSingleGame();
-//        });
+        alert.setOnHidden(event -> {
+            System.out.println("close the end game button");
+            // re-start Game
+            initTwoPlayersGame();
+        });
     }
 
     // Create Food
-    private void generateFood(){
+    private void generateFood() {
         boolean validPosition;
         int x, y;
 
         do {
             validPosition = true;
-            x = (int)(Math.random() * WIDTH);
-            y = (int)(Math.random() * HEIGHT);
+            x = (int) (Math.random() * WIDTH);
+            y = (int) (Math.random() * HEIGHT);
 
             for (Point point : player1.getSnake()) {
                 if (point.getX() == x && point.getY() == y) {
@@ -365,7 +445,7 @@ public class Main extends Application {
                     break;
                 }
             }
-        } while(!validPosition);
+        } while (!validPosition);
         food = new Point(x, y);
     }
 
@@ -384,26 +464,46 @@ public class Main extends Application {
         Point player1Head = player1.getSnake().getFirst();
         gc.fillRect(player1Head.getX() * SIZE, player1Head.getY() * SIZE, SIZE, SIZE);
 
-//        // draw player2 snakeBody
-//        gc.setFill(Color.BLUE);
-//        for (Point point : player2.getSnake()) {
-//            gc.fillRect(point.getX() * SIZE, point.getY() * SIZE, SIZE, SIZE);
-//        }
-//
-//        // draw player2 snakeHead
-//        gc.setFill(Color.DARKBLUE);
-//        Point player2Head = player2.getSnake().getFirst();
-//        gc.fillRect(player2Head.getX() * SIZE, player2Head.getY() * SIZE, SIZE, SIZE);
-
         // draw food
         gc.setFill(Color.RED);
-//        System.out.printf("food: [%d, %d]", food.getX(), food.getY());
         gc.fillOval(food.getX() * SIZE, food.getY() * SIZE, SIZE, SIZE);
+    }
+
+    private void paintTwoMode() {
+        // clean snakeBody
+        gcTwo.clearRect(0, 0, WIDTH * SIZE, HEIGHT * SIZE);
+
+        // draw player1 snakeBody
+        gcTwo.setFill(Color.GREEN);
+        for (Point point : player1.getSnake()) {
+            gcTwo.fillRect(point.getX() * SIZE, point.getY() * SIZE, SIZE, SIZE);
+        }
+
+        // draw player1 snakeHead
+        gcTwo.setFill(Color.DARKGREEN);
+        Point player1Head = player1.getSnake().getFirst();
+        gcTwo.fillRect(player1Head.getX() * SIZE, player1Head.getY() * SIZE, SIZE, SIZE);
+
+        // draw player2 snakeBody
+        gcTwo.setFill(Color.BLUE);
+        for (Point point : player2.getSnake()) {
+            gcTwo.fillRect(point.getX() * SIZE, point.getY() * SIZE, SIZE, SIZE);
+        }
+
+        // draw player2 snakeHead
+        gcTwo.setFill(Color.DARKBLUE);
+        Point player2Head = player2.getSnake().getFirst();
+        gcTwo.fillRect(player2Head.getX() * SIZE, player2Head.getY() * SIZE, SIZE, SIZE);
+
+        // draw food
+        gcTwo.setFill(Color.RED);
+        gcTwo.fillOval(food.getX() * SIZE, food.getY() * SIZE, SIZE, SIZE);
     }
 
     private void updateSingleGame() {
         singleGameTimer = new AnimationTimer() {
             private long lastUpdateTime;
+
             @Override
             public void handle(long now) {
 
@@ -418,5 +518,26 @@ public class Main extends Application {
         };
 
         singleGameTimer.start();
+    }
+
+    private void updateTwoPlayersGame() {
+        twoPlayersGameTimer = new AnimationTimer() {
+            private long lastUpdateTime;
+
+            @Override
+            public void handle(long now) {
+
+                if (now - lastUpdateTime >= 1_000_000_000 / SPEED) {
+                    lastUpdateTime = now;
+                    if (!gameOver && !gamePaused) {
+                        movePlayer1ForTwoMode();
+                        movePlayer2();
+                        paintTwoMode();
+                    }
+                }
+            }
+        };
+
+        twoPlayersGameTimer.start();
     }
 }
