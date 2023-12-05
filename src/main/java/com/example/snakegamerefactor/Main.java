@@ -21,7 +21,7 @@ public class Main extends Application {
     private static final int WIDTH = 30;
     private static final int HEIGHT = 20;
     private static final int SIZE = 20;
-    private static final int SPEED = 5;
+    private static final int SPEED = 6;
 
     // Canvas and GraphicsContext
     private static Canvas canvas = new Canvas(WIDTH * SIZE, HEIGHT * SIZE);
@@ -48,6 +48,8 @@ public class Main extends Application {
 
     // Is Paused
     private boolean gamePaused = false;
+    private boolean isPlayer1Win = false;
+    private boolean isCollisonEnd = false;
 
     // control AnimationTimer
     private AnimationTimer singleGameTimer;
@@ -223,6 +225,7 @@ public class Main extends Application {
 
     private void initTwoPlayersGame() {
         // clear snake body length
+        isCollisonEnd = false;
         player1.getSnake().clear();
         player2.getSnake().clear();
         player1.setDirection(Direction.RIGHT);
@@ -317,6 +320,7 @@ public class Main extends Application {
 
         // if crash snake body
         if (player1.getSnake().contains(newHead)) {
+            isPlayer1Win = false;
             gameOver = true;
             showTwoPlayersGameOverDialog();
             return;
@@ -325,6 +329,17 @@ public class Main extends Application {
         // if crash the border
         if (newHead.getX() < 0 || newHead.getX() >= WIDTH ||
                 newHead.getY() < 0 || newHead.getY() >= HEIGHT) {
+            isPlayer1Win = false;
+            gameOver = true;
+            System.out.println("绿色蛇撞边界");
+            System.out.println("isPlayer1Win" + isPlayer1Win);
+            showTwoPlayersGameOverDialog();
+            return;
+        }
+
+        if (player1.isCollision(player2)) {
+            isCollisonEnd = true;
+            isPlayer1Win = false;
             gameOver = true;
             showTwoPlayersGameOverDialog();
             return;
@@ -367,6 +382,7 @@ public class Main extends Application {
 
         // if crash snake body
         if (player2.getSnake().contains(newHead)) {
+            isPlayer1Win = true;
             gameOver = true;
             showTwoPlayersGameOverDialog();
             return;
@@ -375,6 +391,16 @@ public class Main extends Application {
         // if crash the border
         if (newHead.getX() < 0 || newHead.getX() >= WIDTH ||
                 newHead.getY() < 0 || newHead.getY() >= HEIGHT) {
+            isPlayer1Win = true;
+            gameOver = true;
+            showTwoPlayersGameOverDialog();
+            return;
+        }
+
+        // if crash another snake
+        if (player2.isCollision(player1)) {
+            isCollisonEnd = true;
+            isPlayer1Win = true;
             gameOver = true;
             showTwoPlayersGameOverDialog();
             return;
@@ -408,11 +434,28 @@ public class Main extends Application {
         });
     }
 
+    // check which snake crash another
+
     private void showTwoPlayersGameOverDialog() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Game Over");
         alert.setHeaderText(null);
-        alert.setContentText("Game Over");
+
+        if (!isCollisonEnd) {
+            // No Collision
+            if (isPlayer1Win) {
+                alert.setContentText("Game Over! Player 1 Win!!!");
+            } else {
+                alert.setContentText("Game Over! Player 2 Win!!!");
+            }
+        } else {
+            if (isPlayer1Win) {
+                alert.setContentText("Game Over! Player 1 Win!!!");
+            } else {
+                alert.setContentText("Game Over! Player 2 Win!!!");
+            }
+        }
+
         alert.show();
 
         alert.setOnHidden(event -> {

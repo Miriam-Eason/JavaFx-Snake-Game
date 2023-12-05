@@ -22,4 +22,19 @@ public class Snake {
     public void setSnake(Deque<Point> snake) {
         this.snake = snake;
     }
+
+    public boolean isCollision(Snake otherSnake) {
+        if (otherSnake == null) {
+            return false;
+        }
+
+        Point head = this.getSnake().getFirst(); // get self Head
+        for (Point point : otherSnake.getSnake()) {
+            if (head.equals(point)) {
+                return true; // if crash return true
+            }
+        }
+
+        return false; // else return false
+    }
 }
