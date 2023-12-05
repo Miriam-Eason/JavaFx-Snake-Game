@@ -28,6 +28,7 @@ public class StartController {
     @FXML
     void initTwoMode(ActionEvent event) {
         System.out.println("click twoMode");
+        mainApp.switchToTwoPlayersScene();
     }
 
     @FXML
